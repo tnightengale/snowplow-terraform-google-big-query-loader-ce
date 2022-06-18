@@ -1,4 +1,4 @@
-[![Release][release-image]][release] [![CI][ci-image]][ci] [![License][license-image]][license] [![Registry][registry-image]][registry] [![Source][source-image]][source]
+[![Release][release-image]][release] [![CI][ci-image]][ci] [![License][license-image]][license] [![Source][source-image]][source]
 
 # terraform-google-bigquery-loader-ce
 
@@ -97,11 +97,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-[release]: https://github.com/tnightengale/terraform-google-big-query-loader-ce/releases/latest
-[release-image]: https://img.shields.io/github/v/release/snowplow-devops/terraform-google-collector-pubsub-ce
+[release]: https://github.com/tnightengale/snowplow-terraform-google-big-query-loader-ce/releases/latest
+[release-image]: https://img.shields.io/github/v/release/tnightengale/snowplow-terraform-google-big-query-loader-ce
 
-[ci]: https://github.com/tnightengale/terraform-google-big-query-loader-ce/actions?query=workflow%3Aci
-[ci-image]: https://github.com/tnightengale/terraform-google-big-query-loader-ce/workflows/ci/badge.svg
+[ci]: https://github.com/tnightengale/snowplow-terraform-google-big-query-loader-ce/actions?query=workflow%3Aci
+[ci-image]: https://github.com/tnightengale/snowplow-terraform-google-big-query-loader-ce/workflows/ci/badge.svg
 
 [license]: https://www.apache.org/licenses/LICENSE-2.0
 [license-image]: https://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
