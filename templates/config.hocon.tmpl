@@ -1,0 +1,54 @@
+{
+  "projectId": "com-acme"
+
+  "loader": {
+    "input": {
+      "subscription": ${enriched_sub}
+    }
+
+    "output": {
+      "good": {
+        "datasetId": "snowplow"
+        "tableId": "events"
+      }
+
+      "bad": {
+        "topic": ${bad_topic}
+      }
+
+      "types": {
+        "topic": ${types_topic}
+      }
+
+      "failedInserts": {
+        "topic": ${failed_inserts_topic}
+      }
+    }
+  }
+
+  "mutator": {
+    "input": {
+      "subscription": ${types_sub}
+    }
+
+    "output": {
+      "good": \$${loader.output.good} # will be automatically inferred
+    }
+  }
+
+  "repeater": {
+    "input": {
+      "subscription": ${failed_inserts_sub}
+    }
+
+    "output": {
+      "good": \$${loader.output.good} # will be automatically inferred
+
+      "deadLetters": {
+        "bucket": ${dead_letter_bucket_path}
+      }
+    }
+  }
+
+  "monitoring": {} # disabled
+}

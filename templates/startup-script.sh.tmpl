@@ -1,0 +1,50 @@
+#!/bin/bash
+set -e -x
+
+# -----------------------------------------------------------------------------
+#  BASE INSTALL
+# -----------------------------------------------------------------------------
+
+readonly CONFIG_DIR=/opt/snowplow/config
+
+function install_base_packages() {
+  sudo apt install wget curl unzip -y
+}
+
+function install_docker_ce() {
+  sudo apt install docker.io -y
+  sudo systemctl enable --now docker
+}
+
+sudo apt update -y
+
+install_base_packages
+install_docker_ce
+
+sudo mkdir -p $${CONFIG_DIR}
+
+# Create config.hocon on volume from template
+sudo cat << EOF > $${CONFIG_DIR}/collector.hocon
+${config_hocon_contents}
+EOF
+
+# Create base64 collector string
+collector_base64=$(base64 $${CONFIG_DIR}/collector.hocon)
+
+# Create resolver.json on volume from template
+sudo cat << EOF > $${CONFIG_DIR}/resolver.json
+${resolver_json_contents}
+EOF
+
+# Create base64 resolver string
+resolver_base64=$(base64 $${CONFIG_DIR}/resolver.json)
+
+# Run container from image
+sudo docker run -v $${CONFIG_DIR}/resolver.json:/resolver.json \
+  snowplow/${image} \
+  %{ if name == "snowplow-bigquery-mutator" ~}
+  listen \
+  %{ endif ~}
+  --config $collector_base64 \
+  --resolver $resolver_base64 \
+  -Dconfig.override_with_env_vars=true
