@@ -1,4 +1,4 @@
-****[![Release][release-image]][release] [![CI][ci-image]][ci] [![License][license-image]][license] [![Source][source-image]][source]
+[![Release][release-image]][release] [![CI][ci-image]][ci] [![License][license-image]][license] [![Source][source-image]][source]
 
 # snowplow-terraform-google-bigquery-loader-ce
 
