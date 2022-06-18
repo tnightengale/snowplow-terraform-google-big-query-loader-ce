@@ -2,6 +2,7 @@
 
 # snowplow-terraform-google-bigquery-loader-ce
 
+A Terraform module which deploys the Snowplow BigQuery Loader apps on CE. If you want to use a custom image for this deployment you will need to ensure it is based on top of Ubuntu 20.04.
 
 ## Usage
 
