@@ -12,30 +12,6 @@ locals {
     local.local_labels
   )
 
-  named_port_http = "http"
-}
-
-data "google_compute_image" "ubuntu_20_04" {
-  family  = "ubuntu-2004-lts"
-  project = "ubuntu-os-cloud"
-}
-
-locals {
-  config = templatefile("${path.module}/templates/config.hocon.tmpl", {
-    enriched_sub = var.enriched_sub
-    bad_topic    = var.bad_topic
-
-    types_sub   = var.types_sub
-    types_topic = var.types_topic
-
-    failed_inserts_sub   = var.failed_inserts_sub
-    failed_inserts_topic = var.failed_inserts_topic
-
-    dead_letter_bucket_path = var.dead_letter_bucket_path
-  })
-
-  resolver = file("${path.module}/templates/resolver.json.tmpl")
-
   ssh_keys_metadata = <<EOF
     %{for v in var.ssh_key_pairs~}
       ${v.user_name}:${v.public_key}
@@ -45,6 +21,84 @@ locals {
   images_by_name = {
     for i in var.images : regex(".*[/]([a-z-]*):", i) => i
   }
+}
+
+data "google_compute_image" "ubuntu_20_04" {
+  family  = "ubuntu-2004-lts"
+  project = "ubuntu-os-cloud"
+}
+
+# Set Up Google Cloud Storage
+resource "google_storage_bucket" "dead_letter" {
+  name     = "${var.prefix}-bq-loader-dead-letter"
+  location = var.region
+}
+
+# Set Up Subscriptions and Topics
+resource "google_pubsub_subscription" "input_subscription" {
+  name                       = "${var.prefix}-input-subscription"
+  topic                      = var.enriched_events_topic
+  labels                     = local.labels
+  message_retention_duration = "1200s"
+  retain_acked_messages      = true
+  ack_deadline_seconds       = 20
+  enable_message_ordering    = false
+  expiration_policy {
+    ttl = "300000.5s"
+  }
+  retry_policy {
+    minimum_backoff = "10s"
+  }
+}
+
+resource "google_pubsub_subscription" "types_subscription" {
+  name                       = "${var.prefix}-types-subscription"
+  topic                      = google_pubsub_topic.types_topic
+  labels                     = local.labels
+  message_retention_duration = "1200s"
+  retain_acked_messages      = true
+  ack_deadline_seconds       = 20
+  enable_message_ordering    = false
+  expiration_policy {
+    ttl = "300000.5s"
+  }
+  retry_policy {
+    minimum_backoff = "10s"
+  }
+}
+
+resource "google_pubsub_subscription" "failed_insert_subscription" {
+  name                       = "${var.prefix}-failed-insert-subscription"
+  topic                      = google_pubsub_topic.bad_types_topic.id
+  labels                     = local.labels
+  message_retention_duration = "1200s"
+  retain_acked_messages      = true
+  ack_deadline_seconds       = 20
+  enable_message_ordering    = false
+  expiration_policy {
+    ttl = "300000.5s"
+  }
+  retry_policy {
+    minimum_backoff = "10s"
+  }
+}
+
+resource "google_pubsub_topic" "types_topic" {
+  name                       = "${var.prefix}-types-topic"
+  labels                     = local.labels
+  message_retention_duration = 3600
+}
+
+resource "google_pubsub_topic" "bad_types_topic" {
+  name                       = "${var.prefix}-bad-types-topic"
+  labels                     = local.labels
+  message_retention_duration = 3600
+}
+
+resource "google_pubsub_topic" "failed_insert_topic" {
+  name                       = "${var.prefix}-failed-insert-topic"
+  labels                     = local.labels
+  message_retention_duration = 3600
 }
 
 resource "google_compute_instance_template" "tpl" {
@@ -92,6 +146,24 @@ resource "google_compute_instance_template" "tpl" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+locals {
+  config = templatefile("${path.module}/templates/config.hocon.tmpl", {
+    input_sub = google_pubsub_subscription.input_subscription
+
+    types_sub       = google_pubsub_subscription.types_subscription
+    types_topic     = google_pubsub_topic.bad_types_topic
+    bad_types_topic = google_pubsub_topic.bad_types_topic
+
+    failed_inserts_sub   = google_pubsub_subscription.failed_insert_subscription
+    failed_inserts_topic = google_pubsub_topic.failed_insert_topic
+
+    dead_letter_bucket_path = google_storage_bucket.dead_letter
+  })
+
+  resolver = file("${path.module}/templates/resolver.json.tmpl")
+
 }
 
 resource "google_compute_instance_from_template" "snowplow_bq_app" {

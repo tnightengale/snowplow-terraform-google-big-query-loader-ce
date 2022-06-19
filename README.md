@@ -4,40 +4,6 @@
 
 A Terraform module which deploys the Snowplow BigQuery Loader apps on CE. If you want to use a custom image for this deployment you will need to ensure it is based on top of Ubuntu 20.04.
 
-## Usage
-
-The Snowplow BigQuery Loader consists of three apps: StreamLoader, Mutator, and
-Repeater. This module deploys all three by default to Compute Engine instances
-on Google Cloud Platform.
-
-```hcl
-module "snowplow_bq_loader" {
-  source  = "snowplow-bigquery-loader-apps"
-  version = "0.1.0"
-
-  prefix = var.prefix
-  region = var.region
-  network = var.network
-  subnetwork = var.subnetwork
-  machine_type = var.machine_type
-  ssh_ip_allowlist = var.ssh_ip_allowlist
-  ssh_block_project_keys = var.ssh_block_project_keys
-  ssh_key_pairs = var.ssh_key_pairs
-  ubuntu_20_04_source_image = var.ubuntu_20_04_source_image
-  labels = var.labels
-  gcp_logs_enabled = var.gcp_logs_enabled
-  images = var.images
-  service_account_email = var.service_account_email
-  enriched_sub = var.enriched_sub
-  bad_topic = var.bad_topic
-  types_sub = var.types_sub
-  types_topic = var.types_topic
-  failed_inserts_sub = var.failed_inserts_sub
-  failed_inserts_topic = var.failed_inserts_topic
-  dead_letter_bucket_path = var.dead_letter_bucket_path
-  tags = var.tags
-}
-```
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -62,17 +28,20 @@ No modules.
 |------|------|
 | [google_compute_instance_from_template.snowplow_bq_app](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_from_template) | resource |
 | [google_compute_instance_template.tpl](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_template) | resource |
+| [google_pubsub_subscription.failed_insert_subscription](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/pubsub_subscription) | resource |
+| [google_pubsub_subscription.input_subscription](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/pubsub_subscription) | resource |
+| [google_pubsub_subscription.types_subscription](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/pubsub_subscription) | resource |
+| [google_pubsub_topic.bad_types_topic](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/pubsub_topic) | resource |
+| [google_pubsub_topic.failed_insert_topic](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/pubsub_topic) | resource |
+| [google_pubsub_topic.types_topic](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/pubsub_topic) | resource |
+| [google_storage_bucket.dead_letter](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
 | [google_compute_image.ubuntu_20_04](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/compute_image) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_bad_topic"></a> [bad\_topic](#input\_bad\_topic) | The pubsub topic to contain failed messages of inserts in BigQuery. | `string` | n/a | yes |
-| <a name="input_dead_letter_bucket_path"></a> [dead\_letter\_bucket\_path](#input\_dead\_letter\_bucket\_path) | The uri for the Google Cloud Storage bucket, where failed inserts are dead lettered. | `string` | n/a | yes |
-| <a name="input_enriched_sub"></a> [enriched\_sub](#input\_enriched\_sub) | The pubsub subscription to read enriched messages from. | `string` | n/a | yes |
-| <a name="input_failed_inserts_sub"></a> [failed\_inserts\_sub](#input\_failed\_inserts\_sub) | The pubsub subscription for failed inserts. | `string` | n/a | yes |
-| <a name="input_failed_inserts_topic"></a> [failed\_inserts\_topic](#input\_failed\_inserts\_topic) | The pubsub topic for failed inserts. | `string` | n/a | yes |
+| <a name="input_enriched_events_topic"></a> [enriched\_events\_topic](#input\_enriched\_events\_topic) | The pubsub topic to read enriched messages from. | `string` | n/a | yes |
 | <a name="input_gcp_logs_enabled"></a> [gcp\_logs\_enabled](#input\_gcp\_logs\_enabled) | Whether application logs should be reported to GCP Logging | `bool` | `true` | no |
 | <a name="input_images"></a> [images](#input\_images) | The docker images with version tag to deploy on Compute Engine's instances. See here for details:<br>  https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/bigquery-loader/<br><br>  The default is to launch all three apps: 'Stream Loader', 'Mutator' and 'Repeater'. | `list(string)` | <pre>[<br>  "snowplow/snowplow-bigquery-streamloader:1.3.0",<br>  "snowplow/snowplow-bigquery-loader:1.3.0",<br>  "snowplow/snowplow-bigquery-mutator:1.3.0"<br>]</pre> | no |
 | <a name="input_labels"></a> [labels](#input\_labels) | The labels to append to this resource | `map(string)` | `{}` | no |
@@ -86,8 +55,6 @@ No modules.
 | <a name="input_ssh_key_pairs"></a> [ssh\_key\_pairs](#input\_ssh\_key\_pairs) | The list of SSH key-pairs to add to the servers | <pre>list(object({<br>    user_name  = string<br>    public_key = string<br>  }))</pre> | `[]` | no |
 | <a name="input_subnetwork"></a> [subnetwork](#input\_subnetwork) | The name of the sub-network to deploy within; if populated will override the 'network' setting | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | The tags to apply to the created resources. | `list(string)` | n/a | yes |
-| <a name="input_types_sub"></a> [types\_sub](#input\_types\_sub) | The pubsub subscription for all the unique self describing json schemas which have been encountered to load into bigquery. | `string` | n/a | yes |
-| <a name="input_types_topic"></a> [types\_topic](#input\_types\_topic) | The pubsub topic for all the unique self describing json schemas which have been encountered to load into bigquery. | `string` | n/a | yes |
 | <a name="input_ubuntu_20_04_source_image"></a> [ubuntu\_20\_04\_source\_image](#input\_ubuntu\_20\_04\_source\_image) | The source image to use which must be based of of Ubuntu 20.04; by default the latest community version is used | `string` | `""` | no |
 
 ## Outputs
