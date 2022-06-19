@@ -1,9 +1,10 @@
-[![Release][release-image]][release] [![CI][ci-image]][ci] [![License][license-image]][license] [![Registry][registry-image]][registry] [![Source][source-image]][source]
+[![Release][release-image]][release] [![CI][ci-image]][ci] [![License][license-image]][license] [![Source][source-image]][source]
 
-# terraform-google-bigquery-loader-ce
+# snowplow-terraform-google-bigquery-loader-ce
 
-A Terraform module which deploys the Snowplow BigQuery Loader apps on CE.  If you want to use a custom image for this deployment you will need to ensure it is based on top of Ubuntu 20.04.
+A Terraform module which deploys the Snowplow BigQuery Loader apps on CE. If you want to use a custom image for this deployment you will need to ensure it is based on top of Ubuntu 20.04.
 
+<!-- BEGIN_TF_DOCS -->
 ## Usage
 
 The Snowplow BigQuery Loader consists of three apps: StreamLoader, Mutator, and
@@ -39,37 +40,6 @@ module "snowplow_bq_loader" {
 }
 ```
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-A utility to generate documentation from Terraform modules in various output formats
-
-Usage:
-  terraform-docs [PATH] [flags]
-  terraform-docs [command]
-
-Available Commands:
-  asciidoc    Generate AsciiDoc of inputs and outputs
-  completion  Generate shell completion code for the specified shell (bash or zsh)
-  help        Help about any command
-  json        Generate JSON of inputs and outputs
-  markdown    Generate Markdown of inputs and outputs
-  pretty      Generate colorized pretty of inputs and outputs
-  tfvars      Generate terraform.tfvars of inputs
-  toml        Generate TOML of inputs and outputs
-  version     Print the version number of terraform-docs
-  xml         Generate XML of inputs and outputs
-  yaml        Generate YAML of inputs and outputs
-
-Flags:
-  -c, --config string               config file name (default ".terraform-docs.yml")
-      --footer-from string          relative path of a file to read footer from (default "")
-      --header-from string          relative path of a file to read header from (default "main.tf")
-  -h, --help                        help for terraform-docs
-      --hide strings                hide section [all, data-sources, footer, header, inputs, modules, outputs, providers, requirements, resources]
-      --lockfile                    read .terraform.lock.hcl if exist (default true)
-      --output-check                check if content of output file is up to date (default false)
-      --output-file string          file path to insert output into (default "")
-      --output-mode string          output to file method [inject, replace] (default "inject")
-      --output-template string      output template (default "<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
@@ -106,7 +76,13 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+
 | <a name="input_enriched_events_topic"></a> [enriched\_events\_topic](#input\_enriched\_events\_topic) | The pubsub topic to read enriched messages from. | `string` | n/a | yes |
+| <a name="input_bad_topic"></a> [bad\_topic](#input\_bad\_topic) | The pubsub topic to contain failed messages of inserts in BigQuery. | `string` | n/a | yes |
+| <a name="input_dead_letter_bucket_path"></a> [dead\_letter\_bucket\_path](#input\_dead\_letter\_bucket\_path) | The uri for the Google Cloud Storage bucket, where failed inserts are dead lettered. | `string` | n/a | yes |
+| <a name="input_enriched_sub"></a> [enriched\_sub](#input\_enriched\_sub) | The pubsub subscription to read enriched messages from. | `string` | n/a | yes |
+| <a name="input_failed_inserts_sub"></a> [failed\_inserts\_sub](#input\_failed\_inserts\_sub) | The pubsub subscription for failed inserts. | `string` | n/a | yes |
+| <a name="input_failed_inserts_topic"></a> [failed\_inserts\_topic](#input\_failed\_inserts\_topic) | The pubsub topic for failed inserts. | `string` | n/a | yes |
 | <a name="input_gcp_logs_enabled"></a> [gcp\_logs\_enabled](#input\_gcp\_logs\_enabled) | Whether application logs should be reported to GCP Logging | `bool` | `true` | no |
 | <a name="input_images"></a> [images](#input\_images) | The docker images with version tag to deploy on Compute Engine's instances. See here for details:<br>  https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/bigquery-loader/<br><br>  The default is to launch all three apps: 'Stream Loader', 'Mutator' and 'Repeater'. | `list(string)` | <pre>[<br>  "snowplow/snowplow-bigquery-streamloader:1.3.0",<br>  "snowplow/snowplow-bigquery-loader:1.3.0",<br>  "snowplow/snowplow-bigquery-mutator:1.3.0"<br>]</pre> | no |
 | <a name="input_labels"></a> [labels](#input\_labels) | The labels to append to this resource | `map(string)` | `{}` | no |
@@ -127,20 +103,7 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_bq_loader_apps"></a> [bq\_loader\_apps](#output\_bq\_loader\_apps) | The compute instances created. |
-<!-- END_TF_DOCS -->")
-      --output-values               inject output values into outputs (default false)
-      --output-values-from string   inject output values from file into outputs (default "")
-      --read-comments               use comments as description when description is empty (default true)
-      --recursive                   update submodules recursively (default false)
-      --recursive-path string       submodules path to recursively update (default "modules")
-      --show strings                show section [all, data-sources, footer, header, inputs, modules, outputs, providers, requirements, resources]
-      --sort                        sort items (default true)
-      --sort-by string              sort items by criteria [name, required, type] (default "name")
-  -v, --version                     version for terraform-docs
-
-Use "terraform-docs [command] --help" for more information about a command.
-
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->
 
 # Copyright and license
 
@@ -155,11 +118,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-[release]: https://github.com/tnightengale/terraform-google-big-query-loader-ce/releases/latest
-[release-image]: https://img.shields.io/github/v/release/snowplow-devops/terraform-google-collector-pubsub-ce
+[release]: https://github.com/tnightengale/snowplow-terraform-google-big-query-loader-ce/releases/latest
+[release-image]: https://img.shields.io/github/v/release/tnightengale/snowplow-terraform-google-big-query-loader-ce
 
-[ci]: https://github.com/tnightengale/terraform-google-big-query-loader-ce/actions?query=workflow%3Aci
-[ci-image]: https://github.com/tnightengale/terraform-google-big-query-loader-ce/workflows/ci/badge.svg
+[ci]: https://github.com/tnightengale/snowplow-terraform-google-big-query-loader-ce/actions?query=workflow%3Aci
+[ci-image]: https://github.com/tnightengale/snowplow-terraform-google-big-query-loader-ce/workflows/ci/badge.svg
 
 [license]: https://www.apache.org/licenses/LICENSE-2.0
 [license-image]: https://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
