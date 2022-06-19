@@ -29,7 +29,7 @@ module "snowplow_bq_loader" {
   images = var.images
   service_account_email = var.service_account_email
   enriched_sub = var.enriched_sub
-  bad_topic = var.bad_topic
+  bad_types_topic = var.bad_types_topic
   types_sub = var.types_sub
   types_topic = var.types_topic
   failed_inserts_sub = var.failed_inserts_sub

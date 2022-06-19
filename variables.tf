@@ -86,38 +86,8 @@ variable "service_account_email" {
   type        = string
 }
 
-variable "enriched_sub" {
-  description = "The pubsub subscription to read enriched messages from."
-  type        = string
-}
-
-variable "bad_topic" {
-  description = "The pubsub topic to contain failed messages of inserts in BigQuery."
-  type        = string
-}
-
-variable "types_sub" {
-  description = "The pubsub subscription for all the unique self describing json schemas which have been encountered to load into bigquery."
-  type        = string
-}
-
-variable "types_topic" {
-  description = "The pubsub topic for all the unique self describing json schemas which have been encountered to load into bigquery."
-  type        = string
-}
-
-variable "failed_inserts_sub" {
-  description = "The pubsub subscription for failed inserts."
-  type        = string
-}
-
-variable "failed_inserts_topic" {
-  description = "The pubsub topic for failed inserts."
-  type        = string
-}
-
-variable "dead_letter_bucket_path" {
-  description = "The uri for the Google Cloud Storage bucket, where failed inserts are dead lettered."
+variable "enriched_events_topic" {
+  description = "The pubsub topic to read enriched messages from."
   type        = string
 }
 
