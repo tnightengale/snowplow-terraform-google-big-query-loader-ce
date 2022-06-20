@@ -54,18 +54,33 @@ resource "google_service_account" "sa" {
 }
 
 resource "google_project_iam_member" "sa_pubsub_viewer" {
-  role   = "roles/pubsub.viewer"
-  member = "serviceAccount:${google_service_account.sa.email}"
+  role    = "roles/pubsub.viewer"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+  project = var.project_id
 }
 
 resource "google_project_iam_member" "sa_pubsub_publisher" {
-  role   = "roles/pubsub.publisher"
-  member = "serviceAccount:${google_service_account.sa.email}"
+  role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+  project = var.project_id
+}
+
+resource "google_project_iam_member" "sa_pubsub_subscriber" {
+  role    = "roles/pubsub.subscriber"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+  project = var.project_id
 }
 
 resource "google_project_iam_member" "sa_logging_log_writer" {
-  role   = "roles/logging.logWriter"
-  member = "serviceAccount:${google_service_account.sa.email}"
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+  project = var.project_id
+}
+
+resource "google_project_iam_member" "sa_storage_object_viewer" {
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+  project = var.project_id
 }
 
 
@@ -196,16 +211,21 @@ resource "google_compute_instance_template" "tpl" {
 
 locals {
   shared_hocon = templatefile("${path.module}/templates/config.hocon.tmpl", {
-    input_sub = google_pubsub_subscription.input_subscription.id
+    dataset_id = var.dataset_id
+    table_id   = var.table_id
 
-    types_sub       = google_pubsub_subscription.types_subscription.id
-    types_topic     = google_pubsub_topic.bad_types_topic.id
-    bad_types_topic = google_pubsub_topic.bad_types_topic.id
+    input_sub = regex("[^/]+$", google_pubsub_subscription.input_subscription.id)
 
-    failed_inserts_sub   = google_pubsub_subscription.failed_insert_subscription.id
-    failed_inserts_topic = google_pubsub_topic.failed_insert_topic.id
+    types_sub       = regex("[^/]+$", google_pubsub_subscription.types_subscription.id)
+    types_topic     = regex("[^/]+$", google_pubsub_topic.bad_types_topic.id)
+    bad_types_topic = regex("[^/]+$", google_pubsub_topic.bad_types_topic.id)
+
+    failed_inserts_sub   = regex("[^/]+$", google_pubsub_subscription.failed_insert_subscription.id)
+    failed_inserts_topic = regex("[^/]+$", google_pubsub_topic.failed_insert_topic.id)
 
     dead_letter_bucket_path = google_storage_bucket.dead_letter.url
+
+    project_id = var.project_id
   })
 
   resolver = file("${path.module}/templates/resolver.json.tmpl")

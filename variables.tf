@@ -5,6 +5,11 @@ variable "name" {
   default     = "loader"
 }
 
+variable "project_id" {
+  description = "The GCP project ID."
+  type        = string
+}
+
 variable "region" {
   description = "The name of the region to deploy within."
   type        = string
@@ -85,9 +90,9 @@ variable "images" {
   EOH
   type        = list(string)
   default = [
-    "snowplow/snowplow-bigquery-streamloader:latest",
-    "snowplow/snowplow-bigquery-repeater:latest",
-    "snowplow/snowplow-bigquery-mutator:latest"
+    "snowplow/snowplow-bigquery-streamloader:1.3.2",
+    "snowplow/snowplow-bigquery-repeater:1.3.2",
+    "snowplow/snowplow-bigquery-mutator:1.3.2"
   ]
 }
 
@@ -112,4 +117,15 @@ variable "user_provided_id" {
   description = "An optional unique identifier to identify the telemetry events emitted by this stack"
   type        = string
   default     = ""
+}
+
+variable "dataset_id" {
+  description = "The pre-existing BigQuery dataset_id in which to write data."
+  type        = string
+}
+
+variable "table_id" {
+  description = "The BigQuery table_id in which to write data. Create manually using the mutator `create` command. See reference for details: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/bigquery-loader/#block-dda86908-3917-4563-859d-ba8436f1754b"
+  type        = string
+  default     = "snowplow_events"
 }

@@ -24,12 +24,12 @@ install_docker_ce
 sudo mkdir -p $${CONFIG_DIR}
 
 # Create config.hocon on volume from template
-sudo cat << EOF > $${CONFIG_DIR}/collector.hocon
+sudo cat << EOF > $${CONFIG_DIR}/config.hocon
 ${config_hocon_contents}
 EOF
 
-# Create base64 collector string
-collector_base64=$(base64 $${CONFIG_DIR}/collector.hocon)
+# Create base64 config string
+config_base64=$(base64 $${CONFIG_DIR}/config.hocon)
 
 # Create resolver.json on volume from template
 sudo cat << EOF > $${CONFIG_DIR}/resolver.json
@@ -53,8 +53,8 @@ sudo docker run \
 %{ endif ~}
   -v $${CONFIG_DIR}/resolver.json:/resolver.json \
   ${image} %{ if name == "snowplow-bigquery-mutator" ~} listen %{ endif ~} \
-  --config $collector_base64 \
-  --resolver $resolver_base64 \
+  --config $(echo $config_base64 | tr -d ' \n') \
+  --resolver $(echo $resolver_base64 | tr -d ' \n') \
   -Dconfig.override_with_env_vars=true
 
 ${telemetry_script}

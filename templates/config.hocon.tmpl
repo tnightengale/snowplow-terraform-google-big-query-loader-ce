@@ -1,34 +1,34 @@
 {
-  "projectId": "com-acme"
+  "projectId": "${project_id}"
 
   "loader": {
     "input": {
-      "subscription": ${input_sub}
+      "subscription": "${input_sub}"
     }
 
     "output": {
       "good": {
-        "datasetId": "snowplow"
-        "tableId": "events"
+        "datasetId": "${dataset_id}"
+        "tableId": "${table_id}"
       }
 
       "bad": {
-        "topic": ${bad_types_topic}
+        "topic": "${bad_types_topic}"
       }
 
       "types": {
-        "topic": ${types_topic}
+        "topic": "${types_topic}"
       }
 
       "failedInserts": {
-        "topic": ${failed_inserts_topic}
+        "topic": "${failed_inserts_topic}"
       }
     }
   }
 
   "mutator": {
     "input": {
-      "subscription": ${types_sub}
+      "subscription": "${types_sub}"
     }
 
     "output": {
@@ -38,14 +38,13 @@
 
   "repeater": {
     "input": {
-      "subscription": ${failed_inserts_sub}
+      "subscription": "${failed_inserts_sub}"
     }
 
     "output": {
       "good": \$${loader.output.good} # will be automatically inferred
-
       "deadLetters": {
-        "bucket": ${dead_letter_bucket_path}
+        "bucket": "${dead_letter_bucket_path}"
       }
     }
   }
