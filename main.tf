@@ -3,7 +3,7 @@ locals {
   module_version = "0.1.0"
 
   app_name    = "bigquery-loader-apps"
-  app_version = "0.1.0"
+  app_version = "0.2.0"
 
   local_labels = {
     module_name    = local.module_name
@@ -67,31 +67,6 @@ resource "google_bigquery_dataset" "snowplow" {
   dataset_id = var.dataset_config.name
 }
 
-# resource "google_bigquery_table" "snowplow" {
-#   count      = var.table_config.create == true ? 1 : 0
-#   dataset_id = var.dataset_config.name
-#   table_id   = var.table_config.name
-
-#   dynamic "time_partitioning" {
-#     for_each = var.table_config.load_timestamp_column_partition != null ? [1] : []
-#     content {
-#       field = var.table_config.load_timestamp_column
-#       type  = var.table_config.load_timestamp_column_partition
-#     }
-#   }
-
-#   schema = <<-EOF
-#   [
-#     {
-#       "name" : "${var.table_config.load_timestamp_column}",
-#       "type" : "TIMESTAMP",
-#       "mode" : "NULLABLE",
-#       "description" : "Initial timestamp column so mutator doesn't break on an empty schema."
-#     }
-#   ]
-#   EOF
-# }
-
 # --- IAM: Service Account Setup
 resource "google_service_account" "sa" {
   account_id   = var.name
@@ -150,17 +125,6 @@ resource "google_bigquery_dataset_iam_member" "sa_bigquery_dataset_editor" {
     google_bigquery_dataset.snowplow
   ]
 }
-
-# resource "google_bigquery_table_iam_member" "sa_bigquery_table_owner" {
-#   project    = var.project_id
-#   dataset_id = local.created_or_provided_dataset_id
-#   table_id   = local.created_or_provided_table_id
-#   role       = "roles/bigquery.dataOwner"
-#   member     = "serviceAccount:${google_service_account.sa.email}"
-#   depends_on = [
-#     google_compute_instance_from_template.snowplow_bq_app # Table Created by Instance Script
-#   ]
-# }
 
 # --- PubSub: Set Up Subscriptions and Topics
 resource "google_pubsub_topic" "types_topic" {
