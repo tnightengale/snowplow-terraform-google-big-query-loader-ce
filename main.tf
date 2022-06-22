@@ -2,6 +2,9 @@ locals {
   module_name    = "snowplow-bigquery-loader-apps"
   module_version = "0.1.0"
 
+  app_name    = "bigquery-loader-apps"
+  app_version = "0.2.0"
+
   local_labels = {
     module_name    = local.module_name
     module_version = replace(local.module_version, ".", "-")
@@ -19,25 +22,129 @@ locals {
   EOF
 
   images_by_name = {
-    for i in var.images : regex(".*[/]([a-z-]*):", i) => i
+    for i in var.images : regex("snowplow[/]([a-z-]*):", i)[0] => {
+      image = i
+      path  = "${path.module}/templates/${regex("snowplow[/]([a-z-]*):", i)[0]}.sh.tmpl"
+    }
   }
 }
 
+
+module "telemetry" {
+  source  = "snowplow-devops/telemetry/snowplow"
+  version = "0.2.0"
+
+  count = var.telemetry_enabled ? 1 : 0
+
+  user_provided_id = var.user_provided_id
+  cloud            = "GCP"
+  region           = var.region
+  app_name         = local.app_name
+  app_version      = local.app_version
+  module_name      = local.module_name
+  module_version   = local.module_version
+}
+
+# --- CE: Boot Image
 data "google_compute_image" "ubuntu_20_04" {
   family  = "ubuntu-2004-lts"
   project = "ubuntu-os-cloud"
 }
 
-# Set Up Google Cloud Storage
+# --- GCS: Set Up Google Cloud Storage
 resource "google_storage_bucket" "dead_letter" {
-  name     = "${var.prefix}-bq-loader-dead-letter"
-  location = var.region
+  name          = "${var.name}-bq-loader-dead-letter"
+  location      = var.region
+  force_destroy = true
+  versioning {
+    enabled = false
+  }
 }
 
-# Set Up Subscriptions and Topics
+# --- BigQuery Dataset
+resource "google_bigquery_dataset" "snowplow" {
+  count      = var.dataset_config.create == true ? 1 : 0
+  dataset_id = var.dataset_config.name
+}
+
+# --- IAM: Service Account Setup
+resource "google_service_account" "sa" {
+  account_id   = var.name
+  display_name = "Snowplow BigQuery Loader service account - ${var.name}"
+}
+
+resource "google_project_iam_member" "sa_pubsub_viewer" {
+  project = var.project_id
+  role    = "roles/pubsub.viewer"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+}
+
+resource "google_project_iam_member" "sa_pubsub_publisher" {
+  project = var.project_id
+  role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+}
+
+resource "google_project_iam_member" "sa_pubsub_subscriber" {
+  project = var.project_id
+  role    = "roles/pubsub.subscriber"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+}
+
+resource "google_project_iam_member" "sa_logging_log_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+}
+
+resource "google_project_iam_member" "sa_storage_object_viewer" {
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.sa.email}"
+  project = var.project_id
+}
+
+resource "google_storage_bucket_iam_binding" "binding" {
+  bucket = google_storage_bucket.dead_letter.name
+  role   = "roles/storage.objectAdmin"
+  members = [
+    "serviceAccount:${google_service_account.sa.email}"
+  ]
+}
+
+locals {
+  created_or_provided_dataset_id = var.dataset_config.create ? regex("[^/]+$", google_bigquery_dataset.snowplow[0].id) : var.dataset_config.name
+  created_or_provided_table_id   = var.table_config.name
+}
+
+resource "google_bigquery_dataset_iam_member" "sa_bigquery_dataset_editor" {
+  project    = var.project_id
+  dataset_id = local.created_or_provided_dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.sa.email}"
+  depends_on = [
+    google_bigquery_dataset.snowplow
+  ]
+}
+
+# --- PubSub: Set Up Subscriptions and Topics
+resource "google_pubsub_topic" "types_topic" {
+  name   = "${var.name}-types-topic"
+  labels = local.labels
+}
+
+resource "google_pubsub_topic" "bad_types_topic" {
+  name   = "${var.name}-bad-types-topic"
+  labels = local.labels
+}
+
+resource "google_pubsub_topic" "failed_insert_topic" {
+  name   = "${var.name}-failed-insert-topic"
+  labels = local.labels
+}
+
 resource "google_pubsub_subscription" "input_subscription" {
-  name                       = "${var.prefix}-input-subscription"
-  topic                      = var.enriched_events_topic
+  name                       = "${var.name}-input-subscription"
+  topic                      = var.enriched_topic_id
   labels                     = local.labels
   message_retention_duration = "1200s"
   retain_acked_messages      = true
@@ -52,8 +159,8 @@ resource "google_pubsub_subscription" "input_subscription" {
 }
 
 resource "google_pubsub_subscription" "types_subscription" {
-  name                       = "${var.prefix}-types-subscription"
-  topic                      = google_pubsub_topic.types_topic
+  name                       = "${var.name}-types-subscription"
+  topic                      = google_pubsub_topic.types_topic.id
   labels                     = local.labels
   message_retention_duration = "1200s"
   retain_acked_messages      = true
@@ -68,8 +175,8 @@ resource "google_pubsub_subscription" "types_subscription" {
 }
 
 resource "google_pubsub_subscription" "failed_insert_subscription" {
-  name                       = "${var.prefix}-failed-insert-subscription"
-  topic                      = google_pubsub_topic.bad_types_topic.id
+  name                       = "${var.name}-failed-insert-subscription"
+  topic                      = google_pubsub_topic.failed_insert_topic.id
   labels                     = local.labels
   message_retention_duration = "1200s"
   retain_acked_messages      = true
@@ -83,29 +190,12 @@ resource "google_pubsub_subscription" "failed_insert_subscription" {
   }
 }
 
-resource "google_pubsub_topic" "types_topic" {
-  name                       = "${var.prefix}-types-topic"
-  labels                     = local.labels
-  message_retention_duration = 3600
-}
-
-resource "google_pubsub_topic" "bad_types_topic" {
-  name                       = "${var.prefix}-bad-types-topic"
-  labels                     = local.labels
-  message_retention_duration = 3600
-}
-
-resource "google_pubsub_topic" "failed_insert_topic" {
-  name                       = "${var.prefix}-failed-insert-topic"
-  labels                     = local.labels
-  message_retention_duration = 3600
-}
-
+# --- CE: Create Compute Instance Template
 resource "google_compute_instance_template" "tpl" {
   name_prefix = local.module_name
   description = "This template is used to create Compute Engine instances, running the Snowplow BigQuery Loader apps."
 
-  instance_description = var.prefix
+  instance_description = var.name
   machine_type         = var.machine_type
 
   scheduling {
@@ -127,10 +217,17 @@ resource "google_compute_instance_template" "tpl" {
     network    = var.subnetwork == "" ? var.network : ""
     subnetwork = var.subnetwork
 
+    dynamic "access_config" {
+      for_each = var.associate_public_ip_address ? [1] : []
+
+      content {
+        network_tier = "PREMIUM"
+      }
+    }
   }
 
   service_account {
-    email  = var.service_account_email
+    email  = google_service_account.sa.email
     scopes = ["cloud-platform"]
   }
 
@@ -139,7 +236,7 @@ resource "google_compute_instance_template" "tpl" {
     ssh-keys               = local.ssh_keys_metadata
   }
 
-  tags = [var.prefix]
+  tags = [var.name]
 
   labels = local.labels
 
@@ -148,35 +245,71 @@ resource "google_compute_instance_template" "tpl" {
   }
 }
 
+# --- Populate Terraform Templates to Use in Subsequent Steps
 locals {
-  config = templatefile("${path.module}/templates/config.hocon.tmpl", {
-    input_sub = google_pubsub_subscription.input_subscription
 
-    types_sub       = google_pubsub_subscription.types_subscription
-    types_topic     = google_pubsub_topic.bad_types_topic
-    bad_types_topic = google_pubsub_topic.bad_types_topic
+  enriched_topic_name       = regex("[^/]+$", var.enriched_topic_id)
+  types_topic_name          = regex("[^/]+$", google_pubsub_topic.types_topic.id)
+  bad_types_topic_name      = regex("[^/]+$", google_pubsub_topic.bad_types_topic.id)
+  failed_inserts_topic_name = regex("[^/]+$", google_pubsub_topic.failed_insert_topic.id)
 
-    failed_inserts_sub   = google_pubsub_subscription.failed_insert_subscription
-    failed_inserts_topic = google_pubsub_topic.failed_insert_topic
+  input_sub_name          = regex("[^/]+$", google_pubsub_subscription.input_subscription.id)
+  types_sub_name          = regex("[^/]+$", google_pubsub_subscription.types_subscription.id)
+  failed_inserts_sub_name = regex("[^/]+$", google_pubsub_subscription.failed_insert_subscription.id)
 
-    dead_letter_bucket_path = google_storage_bucket.dead_letter
+  shared_hocon = templatefile("${path.module}/templates/config.hocon.tmpl", {
+    dataset_id = local.created_or_provided_dataset_id
+    table_id   = local.created_or_provided_table_id
+
+    types_topic          = local.types_topic_name
+    bad_types_topic      = local.bad_types_topic_name
+    failed_inserts_topic = local.failed_inserts_topic_name
+
+    input_sub          = local.input_sub_name
+    types_sub          = local.types_sub_name
+    failed_inserts_sub = local.failed_inserts_sub_name
+
+    dead_letter_bucket_path = google_storage_bucket.dead_letter.url
+
+    project_id = var.project_id
   })
 
   resolver = file("${path.module}/templates/resolver.json.tmpl")
-
 }
 
+# --- Local: Save Compiled config.hocon and resolver.json
+resource "local_file" "config" {
+  content  = local.shared_hocon
+  filename = "${path.module}/templates/compiled/config.hocon"
+}
+
+resource "local_file" "resolver" {
+  content  = local.resolver
+  filename = "${path.module}/templates/compiled/resolver.json"
+}
+
+# --- CE: Create Apps from Compute Instance Template
 resource "google_compute_instance_from_template" "snowplow_bq_app" {
   for_each = local.images_by_name
-  name     = "${var.prefix}-${each.key}"
-  zone     = var.region
+  name     = "${var.name}-${each.key}"
+  zone     = var.zone
 
   source_instance_template = google_compute_instance_template.tpl.id
 
   metadata_startup_script = templatefile("${path.module}/templates/startup-script.sh.tmpl", {
-    name                   = each.key
-    image                  = each.value
-    config_hocon_contents  = local.config
+
+    telemetry_script       = join("", module.telemetry.*.gcp_ubuntu_20_04_user_data)
+    config_hocon_contents  = local.shared_hocon
     resolver_json_contents = local.resolver
+
+    image_script = templatefile(each.value.path, {
+      name             = each.key
+      image            = each.value.image
+      gcp_logs_enabled = var.gcp_logs_enabled
+    })
   })
+
+  depends_on = [
+    google_bigquery_dataset_iam_member.sa_bigquery_dataset_editor
+  ]
 }
