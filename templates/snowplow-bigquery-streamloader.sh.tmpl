@@ -1,0 +1,16 @@
+sudo docker run \
+  -d \
+  --name ${name} \
+  --restart always \
+  --network host \
+%{ if gcp_logs_enabled ~}
+  --log-driver gcplogs \
+%{ else ~}
+  --log-opt max-size=10m \
+  --log-opt max-file=5 \
+%{ endif ~}
+  -v $${CONFIG_DIR}/resolver.json:/resolver.json \
+  ${image} \
+  --config $(echo $config_base64 | tr -d ' \n') \
+  --resolver $(echo $resolver_base64 | tr -d ' \n') \
+  -Dconfig.override_with_env_vars=true
