@@ -3,23 +3,30 @@ output "bq_loader_apps" {
   value       = google_compute_instance_template.tpl[*]
 }
 
-output "templated_config_hocon" {
-  value = local.shared_hocon
+output "enriched_topic_name" {
+  value = local.enriched_topic_name
 }
 
-output "templated_resolver_json" {
-  value = local.resolver
+output "types_topic_name" {
+  value = local.types_topic_name
 }
 
-output "templated_start_up_scripts" {
-  value = { for k in keys(local.images_by_name) : k => templatefile("${path.module}/templates/startup-script.sh.tmpl", {
-    name                   = k
-    image                  = local.images_by_name[k]
-    config_hocon_contents  = local.shared_hocon
-    resolver_json_contents = local.resolver
+output "bad_types_topic_name" {
+  value = local.bad_types_topic_name
+}
 
-    telemetry_script = join("", module.telemetry.*.gcp_ubuntu_20_04_user_data)
+output "failed_inserts_topic_name" {
+  value = local.failed_inserts_topic_name
+}
 
-    gcp_logs_enabled = var.gcp_logs_enabled
-  }) }
+output "input_sub_name" {
+  value = local.input_sub_name
+}
+
+output "types_sub_name" {
+  value = local.types_sub_name
+}
+
+output "failed_inserts_sub_name" {
+  value = local.failed_inserts_sub_name
 }

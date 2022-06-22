@@ -96,7 +96,7 @@ variable "images" {
   ]
 }
 
-variable "enriched_events_topic" {
+variable "enriched_topic_id" {
   description = "The pubsub topic to read enriched messages from."
   type        = string
 }
@@ -119,13 +119,29 @@ variable "user_provided_id" {
   default     = ""
 }
 
-variable "dataset_id" {
-  description = "The pre-existing BigQuery dataset_id in which to write data."
-  type        = string
+variable "dataset_config" {
+  description = "The dataset in which to load the Snowplow events. Created by default."
+  type = object({
+    name   = string
+    create = bool
+  })
+  default = {
+    name   = "snowplow"
+    create = true
+  }
 }
 
-variable "table_id" {
-  description = "The BigQuery table_id in which to write data. Create manually using the mutator `create` command. See reference for details: https://docs.snowplowanalytics.com/docs/pipeline-components-and-applications/loaders-storage-targets/bigquery-loader/#block-dda86908-3917-4563-859d-ba8436f1754b"
-  type        = string
-  default     = "snowplow_events"
+variable "table_config" {
+  description = "The table in which to load the Snowplow events. Created by default."
+  type = object({
+    name                            = string
+    load_timestamp_column           = string
+    load_timestamp_column_partition = string
+
+  })
+  default = {
+    name                            = "events"
+    load_timestamp_column           = "load_tstamp"
+    load_timestamp_column_partition = null
+  }
 }
