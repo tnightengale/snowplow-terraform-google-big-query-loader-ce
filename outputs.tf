@@ -30,3 +30,11 @@ output "types_sub_name" {
 output "failed_inserts_sub_name" {
   value = local.failed_inserts_sub_name
 }
+
+output "created_or_provided_dataset_id" {
+  value = local.created_or_provided_dataset_id
+}
+
+output "created_or_provided_table_id" {
+  value = local.created_or_provided_table_id
+}

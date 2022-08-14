@@ -25,7 +25,7 @@ override.tf.json
 *_override.tf.json
 
 # Compiled Templates
-./templates/compiled/*
+templates/compiled/*
 
 # Credentials Files
 **/credentials.json

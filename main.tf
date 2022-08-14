@@ -20,13 +20,6 @@ locals {
       ${v.user_name}:${v.public_key}
     %{endfor~}
   EOF
-
-  images_by_name = {
-    for i in var.images : regex("snowplow[/]([a-z-]*):", i)[0] => {
-      image = i
-      path  = "${path.module}/templates/${regex("snowplow[/]([a-z-]*):", i)[0]}.sh.tmpl"
-    }
-  }
 }
 
 
@@ -275,6 +268,26 @@ locals {
   })
 
   resolver = file("${path.module}/templates/resolver.json.tmpl")
+
+  images_by_name = {
+    for i in var.images : regex("snowplow[/]([a-z-]*):", i)[0] => {
+      image         = i
+      template_path = "${path.module}/templates/${regex("snowplow[/]([a-z-]*):", i)[0]}.sh.tmpl"
+      metadata_startup_script = templatefile("${path.module}/templates/startup-script.sh.tmpl", {
+
+        telemetry_script       = join("", module.telemetry.*.gcp_ubuntu_20_04_user_data)
+        config_hocon_contents  = local.shared_hocon
+        resolver_json_contents = local.resolver
+        telemetry_enabled      = var.telemetry_enabled
+
+        image_script = templatefile("${path.module}/templates/${regex("snowplow[/]([a-z-]*):", i)[0]}.sh.tmpl", {
+          name             = i
+          image            = i
+          gcp_logs_enabled = var.gcp_logs_enabled
+        })
+      })
+    }
+  }
 }
 
 # --- Local: Save Compiled config.hocon and resolver.json
@@ -288,6 +301,12 @@ resource "local_file" "resolver" {
   filename = "${path.module}/templates/compiled/resolver.json"
 }
 
+resource "local_file" "startup_scripts" {
+  for_each = local.images_by_name
+  filename = "${path.module}/templates/compiled/${each.key}-startup-script.sh"
+  content  = each.value.metadata_startup_script
+}
+
 # --- CE: Create Apps from Compute Instance Template
 resource "google_compute_instance_from_template" "snowplow_bq_app" {
   for_each = local.images_by_name
@@ -296,18 +315,7 @@ resource "google_compute_instance_from_template" "snowplow_bq_app" {
 
   source_instance_template = google_compute_instance_template.tpl.id
 
-  metadata_startup_script = templatefile("${path.module}/templates/startup-script.sh.tmpl", {
-
-    telemetry_script       = join("", module.telemetry.*.gcp_ubuntu_20_04_user_data)
-    config_hocon_contents  = local.shared_hocon
-    resolver_json_contents = local.resolver
-
-    image_script = templatefile(each.value.path, {
-      name             = each.key
-      image            = each.value.image
-      gcp_logs_enabled = var.gcp_logs_enabled
-    })
-  })
+  metadata_startup_script = each.value.metadata_startup_script
 
   depends_on = [
     google_bigquery_dataset_iam_member.sa_bigquery_dataset_editor
