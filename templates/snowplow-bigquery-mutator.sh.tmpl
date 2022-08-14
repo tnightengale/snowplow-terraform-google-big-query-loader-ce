@@ -1,4 +1,5 @@
-# 1) Create table
+# 1) Create table, if not exists
+set +e
 sudo docker run \
     --network host \
     -v $${CONFIG_DIR}/resolver.json:/resolver.json \
@@ -6,11 +7,11 @@ sudo docker run \
     --config $(echo $config_base64 | tr -d ' \n') \
     --resolver $(echo $resolver_base64 | tr -d ' \n') \
     -Dconfig.override_with_env_vars=true
+set -e
 
 # 2) Listen for change
 sudo docker run \
   -d \
-  --name ${name} \
   --restart always \
   --network host \
 %{ if gcp_logs_enabled ~}
