@@ -49,6 +49,7 @@ A Terraform module which deploys the Snowplow BigQuery Loader apps on CE. If you
 | [google_storage_bucket_iam_binding.binding](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_iam_binding) | resource |
 | [local_file.config](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [local_file.resolver](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [local_file.startup_scripts](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [google_compute_image.ubuntu_20_04](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/compute_image) | data source |
 
 ## Inputs
@@ -83,6 +84,8 @@ A Terraform module which deploys the Snowplow BigQuery Loader apps on CE. If you
 |------|-------------|
 | <a name="output_bad_types_topic_name"></a> [bad\_types\_topic\_name](#output\_bad\_types\_topic\_name) | n/a |
 | <a name="output_bq_loader_apps"></a> [bq\_loader\_apps](#output\_bq\_loader\_apps) | The compute instances created. |
+| <a name="output_created_or_provided_dataset_id"></a> [created\_or\_provided\_dataset\_id](#output\_created\_or\_provided\_dataset\_id) | n/a |
+| <a name="output_created_or_provided_table_id"></a> [created\_or\_provided\_table\_id](#output\_created\_or\_provided\_table\_id) | n/a |
 | <a name="output_enriched_topic_name"></a> [enriched\_topic\_name](#output\_enriched\_topic\_name) | n/a |
 | <a name="output_failed_inserts_sub_name"></a> [failed\_inserts\_sub\_name](#output\_failed\_inserts\_sub\_name) | n/a |
 | <a name="output_failed_inserts_topic_name"></a> [failed\_inserts\_topic\_name](#output\_failed\_inserts\_topic\_name) | n/a |
