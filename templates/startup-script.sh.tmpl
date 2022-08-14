@@ -42,5 +42,7 @@ resolver_base64=$(base64 $${CONFIG_DIR}/resolver.json)
 # Run container from image
 ${image_script}
 
+%{ if telemetry_enabled ~}
 # Telemetry
 ${telemetry_script}
+%{ endif ~}

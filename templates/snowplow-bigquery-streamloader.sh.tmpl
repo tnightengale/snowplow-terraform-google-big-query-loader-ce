@@ -1,6 +1,5 @@
 sudo docker run \
   -d \
-  --name ${name} \
   --restart always \
   --network host \
 %{ if gcp_logs_enabled ~}

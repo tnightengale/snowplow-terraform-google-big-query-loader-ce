@@ -1,6 +1,5 @@
 sudo docker run \
   -d \
-  --name ${name} \
   --restart always \
   --network host \
 %{ if gcp_logs_enabled ~}
@@ -10,7 +9,7 @@ sudo docker run \
   --log-opt max-file=5 \
 %{ endif ~}
   -v $${CONFIG_DIR}/resolver.json:/resolver.json \
-  ${image}
+  ${image} \
   --config $(echo $config_base64 | tr -d ' \n') \
   --resolver $(echo $resolver_base64 | tr -d ' \n') \
   --verbose \
