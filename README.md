@@ -2,7 +2,9 @@
 
 # snowplow-terraform-google-bigquery-loader-ce
 
-A Terraform module which deploys the Snowplow BigQuery Loader apps on CE. If you want to use a custom image for this deployment you will need to ensure it is based on top of Ubuntu 20.04.
+A Terraform module which deploys the [Snowplow BigQuery](https://docs.snowplow.io/docs/pipeline-components-and-applications/loaders-storage-targets/bigquery-loader/) Loader, Mutator and
+Repeater apps on Google Cloud Compute Engine. If you want to use a custom image for this deployment you
+will need to ensure it is based on top of Ubuntu 20.04.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -96,8 +98,6 @@ A Terraform module which deploys the Snowplow BigQuery Loader apps on CE. If you
 
 # Copyright and license
 
-The Terraform Google Collector PubSub on Compute Engine project is Copyright 2021-2022 Snowplow Analytics Ltd.
-
 Licensed under the [Apache License, Version 2.0][license] (the "License");
 you may not use this software except in compliance with the License.
 
@@ -115,9 +115,6 @@ limitations under the License.
 
 [license]: https://www.apache.org/licenses/LICENSE-2.0
 [license-image]: https://img.shields.io/badge/license-Apache--2-blue.svg?style=flat
-
-<!-- [registry]: https://registry.terraform.io/modules/snowplow-devops/collector-pubsub-ce/google/latest
-[registry-image]: https://img.shields.io/static/v1?label=Terraform&message=Registry&color=7B42BC&logo=terraform -->
 
 [source]: https://github.com/snowplow-incubator/snowplow-bigquery-loader
 [source-image]: https://img.shields.io/static/v1?label=Snowplow&message=BigQuery%20Loader&color=0E9BA4&logo=GitHub
