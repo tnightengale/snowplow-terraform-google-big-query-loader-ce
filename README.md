@@ -2,6 +2,9 @@
 
 # snowplow-terraform-google-bigquery-loader-ce
 
+
+># NOTE: This module has been adopted by the official Snowplow DevOps organization and is now archived. Please use the [official module](https://github.com/snowplow-devops/terraform-google-bigquery-loader-pubsub-ce).
+
 A Terraform module which deploys the [Snowplow BigQuery](https://docs.snowplow.io/docs/pipeline-components-and-applications/loaders-storage-targets/bigquery-loader/) Loader, Mutator and
 Repeater apps on Google Cloud Compute Engine. If you want to use a custom image for this deployment you
 will need to ensure it is based on top of Ubuntu 20.04.
